@@ -24,3 +24,6 @@ computador. Deve-se gerar os seguintes gráficos:
   e. Dot Plots – Gráfico de pontos
 6. Realizar a elaboração de um diagrama com imagens apresentando o flow (fluxo) do seu projeto.
 Considere a entrada de dados via HTML e a saída de dados utilizando HTML e JSON.
+
+
+teste pr
