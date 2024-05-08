@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu de Navegação</title>
+    <!-- Incluir Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .navbar {
+        border-radius: 5px;
+      }
+
+      .navbar-brand {
+        font-weight: bold;
+        font-size: 24px;
+      }
+
+      .navbar-nav .nav-link {
+        font-weight: bold;
+        font-size: 18px;
+        color: #333;
+      }
+
+      .navbar-nav .nav-link.active {
+        color: #007bff; /* cor destacada para o item ativo */
+      }
+
+      .navbar-nav .nav-link:hover {
+        color: #007bff;
+      }
+
+      /* Estilo para o conteúdo da página */
+      .content {
+        margin-top: 20px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container">
+        <a class="navbar-brand" href="/">Menu</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#random_vector"
+                onclick="showContent('random_vector')"
+                >Vetor Randomizado</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#sorted_vector"
+                onclick="showContent('sorted_vector')"
+                >Vetor Ordenado</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#scatter_plot"
+                onclick="showContent('scatter_plot')"
+                >Scatter Plot</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#line_chart"
+                onclick="showContent('line_chart')"
+                >Line Chart</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#bar_chart"
+                onclick="showContent('bar_chart')"
+                >Bar Chart</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#bubble_chart"
+                onclick="showContent('bubble_chart')"
+                >Bubble Chart</a
+              >
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="#dot_plot"
+                onclick="showContent('dot_plot')"
+                >Dot Plot</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container content" id="content"></div>
+
+    <!-- Incluir Bootstrap JS (opcional, se necessário) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      // Função para mostrar o conteúdo correspondente ao item de menu clicado
+      function showContent(contentId) {
+        var content = document.getElementById("content");
+        // Você pode carregar o conteúdo de forma dinâmica aqui, dependendo do ID do conteúdo clicado
+        content.innerHTML =
+          "<h1>" +
+          contentId.replace("_", " ") +
+          "</h1><p>Conteúdo da página " +
+          contentId.replace("_", " ") +
+          "</p>";
+
+        // Remover a classe 'active' de todos os links do menu
+        var navLinks = document.querySelectorAll(".navbar-nav .nav-link");
+        navLinks.forEach(function (link) {
+          link.classList.remove("active");
+        });
+
+        // Adicionar a classe 'active' apenas ao link clicado
+        var clickedLink = document.querySelector(
+          '.navbar-nav .nav-link[href="#' + contentId + '"]'
+        );
+        clickedLink.classList.add("active");
+      }
+
+      // Função para obter o contentId do URL
+      function getContentIdFromUrl() {
+        var url = window.location.href;
+        var urlParts = url.split("#");
+        if (urlParts.length > 1) {
+          return urlParts[1];
+        } else {
+          return null; // Retorna null se não houver contentId no URL
+        }
+      }
+
+      // Chamar a função ao carregar a página
+      document.addEventListener("DOMContentLoaded", function () {
+        var contentId = getContentIdFromUrl();
+        if (contentId === null || contentId === "") {
+          // Define um valor padrão para contentId se for nulo ou vazio
+          contentId = "default_content";
+        }
+        showContent(contentId);
+      });
+    </script>
+  </body>
+</html>
