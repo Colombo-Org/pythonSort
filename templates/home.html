@@ -79,7 +79,7 @@
               <a
                 class="nav-link"
                 href="#scatter_plot"
-                onclick="showContent('scatter_plot')"
+                onclick="downloadPlot('scatter_plot')"
                 >Scatter Plot</a
               >
             </li>
@@ -87,7 +87,7 @@
               <a
                 class="nav-link"
                 href="#line_chart"
-                onclick="showContent('line_chart')"
+                onclick="downloadPlot('line_chart')"
                 >Line Chart</a
               >
             </li>
@@ -95,7 +95,7 @@
               <a
                 class="nav-link"
                 href="#bar_chart"
-                onclick="showContent('bar_chart')"
+                onclick="downloadPlot('bar_chart')"
                 >Bar Chart</a
               >
             </li>
@@ -131,7 +131,6 @@
       async function showContent(contentId) {
         var content = document.getElementById("content");
         var url = `http://127.0.0.1:5000/${contentId}`; // Defina a URL do endpoint onde os dados JSON serão obtidos
-        console.log(url);
 
         // Realiza uma requisição para obter os dados JSON do backend
         try {
@@ -163,6 +162,34 @@
         clickedLink.classList.add("active");
       }
 
+      async function downloadPlot(contentId) {
+        var url = `http://127.0.0.1:5000/${contentId}`;
+
+        try {
+          // Realiza uma requisição para baixar o gráfico
+          var response = await fetch(url);
+          var blob = await response.blob();
+
+          // Cria um link temporário para iniciar o download
+          var urlObject = window.URL || window.webkitURL || window;
+          var downloadUrl = urlObject.createObjectURL(blob);
+
+          // Cria um link de download e o aciona
+          var link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = "scatter_plot.png";
+          document.body.appendChild(link);
+          link.click();
+
+          // Libera recursos
+          setTimeout(() => {
+            urlObject.revokeObjectURL(downloadUrl);
+            document.body.removeChild(link);
+          }, 100);
+        } catch (error) {
+          console.error("Erro ao baixar o gráfico:", error);
+        }
+      }
       // Função para obter o contentId do URL
       function getContentIdFromUrl() {
         var url = window.location.href;

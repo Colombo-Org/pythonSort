@@ -1,9 +1,11 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, send_file
 import random
 import sqlite3
 import time
 import json
-
+import matplotlib.pyplot as plt
+from PIL import Image
+import io
 
 app = Flask(__name__)
 
@@ -31,21 +33,22 @@ def create_tables():
 # Executar a função para criar as tabelas
 create_tables()
 
-# Rotas Flask...
-@app.route("/")
-def index():
-    return render_template("index.html")
 
-@app.route("/home")
-def home(): 
-    return render_template("home.html")
-
+def generate_scatter_plot(x, y):
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x, y, color='blue', marker='o', label='Scatter Plot')
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.title('Scatter Plot')
+    plt.legend()
+    
+    # Salvar o gráfico em um arquivo
+    plt.savefig('scatter_plot.png', format='png')
 
 # Função para gerar um vetor ordenado e embaralhá-lo
 def generate_shuffled_vector():
-    ordered_vector = list(range(1, 50001))  # Gerar vetor ordenado
-    random.shuffle(ordered_vector)  # Embaralhar o vetor
-    return ordered_vector
+    shuffled_vector = random.sample(range(1, 1000000), 50000)  # Aqui usei um intervalo de 1 a 1.000.000, você pode ajustar conforme necessário
+    return shuffled_vector
 
 # Função para salvar o vetor randomizado no banco de dados
 def save_vector_to_database(vector):
@@ -63,11 +66,11 @@ def save_vector_to_database(vector):
     conn.close()
 
 # Função para realizar a tomada de tempo de 3 execuções
-def measure_execution_time():
+def measure_execution_time(function, *args):
     times = []
     for _ in range(3):
         start_time = time.time()
-        shuffled_vector = generate_shuffled_vector()
+        shuffled_vector = function(*args)
         times.append(time.time() - start_time)
     return times
 
@@ -100,13 +103,24 @@ def merge_sort(arr):
             arr[k] = right_half[j]
             j += 1
             k += 1
+        
+        return arr 
 
-# Rota para gerar o vetor randomizado e apresentar o resultado em JSON
+
+# Rotas Flask...
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/home")
+def home(): 
+    return render_template("home.html")
+
 @app.route('/random_vector')
 def random_vector():
     shuffled_vector = generate_shuffled_vector()
     save_vector_to_database(shuffled_vector)
-    execution_times = measure_execution_time()
+    execution_times = measure_execution_time(generate_shuffled_vector)
     return jsonify({
         'shuffled_vector': shuffled_vector,
         'execution_times': execution_times
@@ -114,13 +128,47 @@ def random_vector():
 
 @app.route('/sorted_vector')
 def sorted_vector():
+    # Consulta SQL para obter o último valor inserido na tabela random_order
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
     
-    merge_sorted = merge_sort()
-    execution_times = measure_execution_time()
+    # Consulta SQL para obter o último valor inserido na tabela random_order
+    cursor.execute('SELECT value FROM random_order ORDER BY id DESC LIMIT 1')
+    last_value = cursor.fetchone()[0]  # Obter o valor do primeiro campo do registro
+    conn.close()
+    
+    # Remover os colchetes "[" e "]" e converter a string em uma lista de inteiros
+    values = list(map(int, last_value.strip("[]").split(',')))
+
+    # Chamar a função merge_sort para ordenar a lista
+    merge_sorted = merge_sort(values)
+
+    # Medir o tempo de execução
+    execution_times = measure_execution_time(merge_sort, values)
+
     return jsonify({
-        'shuffled_vector': shuffled_vector,
+        'sorted_vector': merge_sorted,
         'execution_times': execution_times
     })
+
+@app.route('/scatter_plot')
+def scatter_plot():
+    # Suponha que você tenha seus próprios dados para o gráfico de dispersão
+    x = [1, 2, 3, 4, 5]  # Dados x
+    y = [10, 15, 20, 25, 30]  # Dados y
+
+    # Gerar o gráfico de dispersão
+    generate_scatter_plot(x, y)
+
+    # Retorna os dados JSON
+    data = {'x': x, 'y': y}
+    return jsonify(data)
+
+@app.route('/download_plot')
+def download_plot():
+    # Abre o gráfico gerado
+    image_path = 'scatter_plot.png'
+    return send_file(image_path, as_attachment=True, attachment_filename='scatter_plot.png')
 
 if __name__ == "__main__":
     app.run(debug=True)
