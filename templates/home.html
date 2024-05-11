@@ -128,15 +128,27 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
       // Função para mostrar o conteúdo correspondente ao item de menu clicado
-      function showContent(contentId) {
+      async function showContent(contentId) {
         var content = document.getElementById("content");
-        // Você pode carregar o conteúdo de forma dinâmica aqui, dependendo do ID do conteúdo clicado
-        content.innerHTML =
-          "<h1>" +
-          contentId.replace("_", " ") +
-          "</h1><p>Conteúdo da página " +
-          contentId.replace("_", " ") +
-          "</p>";
+        var url = `http://127.0.0.1:5000/${contentId}`; // Defina a URL do endpoint onde os dados JSON serão obtidos
+        console.log(url);
+
+        // Realiza uma requisição para obter os dados JSON do backend
+        try {
+          var response = await fetch(url);
+          var data = await response.json();
+
+          // Formata e exibe os dados JSON na página
+          var html = "<h1>" + contentId.replace("_", " ") + "</h1>";
+          html += "<p>";
+          html += JSON.stringify(data, null, 2); // Transforma os dados JSON em uma string formatada
+          html += "</p>";
+          content.innerHTML = html;
+        } catch (error) {
+          console.error("Erro ao obter os dados do backend:", error);
+          content.innerHTML =
+            "<p>Ocorreu um erro ao carregar os dados do backend.</p>";
+        }
 
         // Remover a classe 'active' de todos os links do menu
         var navLinks = document.querySelectorAll(".navbar-nav .nav-link");
