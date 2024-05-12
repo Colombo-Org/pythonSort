@@ -9,6 +9,11 @@
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
       rel="stylesheet"
     />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11.11.0/dist/sweetalert2.min.css"
+      rel="stylesheet"
+    />
     <style>
       .navbar {
         border-radius: 5px;
@@ -79,7 +84,7 @@
               <a
                 class="nav-link"
                 href="#scatter_plot"
-                onclick="downloadPlot('scatter_plot')"
+                onclick="showContent('scatter_plot')"
                 >Scatter Plot</a
               >
             </li>
@@ -87,7 +92,7 @@
               <a
                 class="nav-link"
                 href="#line_chart"
-                onclick="downloadPlot('line_chart')"
+                onclick="showContent('line_chart')"
                 >Line Chart</a
               >
             </li>
@@ -95,7 +100,7 @@
               <a
                 class="nav-link"
                 href="#bar_chart"
-                onclick="downloadPlot('bar_chart')"
+                onclick="showContent('bar_chart')"
                 >Bar Chart</a
               >
             </li>
@@ -126,6 +131,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.11.0/dist/sweetalert2.all.min.js"></script>
     <script>
       // Função para mostrar o conteúdo correspondente ao item de menu clicado
       async function showContent(contentId) {
@@ -133,20 +139,48 @@
         var url = `http://127.0.0.1:5000/${contentId}`; // Defina a URL do endpoint onde os dados JSON serão obtidos
 
         // Realiza uma requisição para obter os dados JSON do backend
-        try {
-          var response = await fetch(url);
-          var data = await response.json();
 
-          // Formata e exibe os dados JSON na página
+        if (contentId.includes("chart") || contentId.includes("plot")) {
           var html = "<h1>" + contentId.replace("_", " ") + "</h1>";
           html += "<p>";
-          html += JSON.stringify(data, null, 2); // Transforma os dados JSON em uma string formatada
+          html += `<form id="dataForm" method="POST">
+                <div class="form-group">
+                  <label for="x">Valor X:</label>
+                  <input type="text" pattern="[0-9,]*" class="form-control" id="x" name="x" required>
+                  <label for="label_x">Label X:</label>
+                  <input type="text" class="form-control" id="label_x" name="label_x">
+                </div>
+
+                <div class="form-group">
+                  <label for="y">Valor Y:</label>
+                  <input type="text" pattern="[0-9,]*" class="form-control" id="y" name="y" required>
+                  <label for="label_y">Label Y:</label>
+                  <input type="text" class="form-control" id="label_y" name="label_y">
+                </div>
+                 <input type="text" class="form-control" id="chart_type" name="chart_type" value="${contentId}" style="display: none;">
+
+                <button type="submit" class="btn btn-primary">Enviar</button>
+              </form>
+               `;
+          // <button class='btn btn-primary' onclick="downloadPlot('${contentId}')">Baixar</button>
           html += "</p>";
           content.innerHTML = html;
-        } catch (error) {
-          console.error("Erro ao obter os dados do backend:", error);
-          content.innerHTML =
-            "<p>Ocorreu um erro ao carregar os dados do backend.</p>";
+        } else {
+          try {
+            var response = await fetch(url);
+            var data = await response.json();
+
+            // Formata e exibe os dados JSON na página
+            var html = "<h1>" + contentId.replace("_", " ") + "</h1>";
+            html += "<p>";
+            html += JSON.stringify(data, null, 2); // Transforma os dados JSON em uma string formatada
+            html += "</p>";
+            content.innerHTML = html;
+          } catch (error) {
+            console.error("Erro ao obter os dados do backend:", error);
+            content.innerHTML =
+              "<p>Ocorreu um erro ao carregar os dados do backend.</p>";
+          }
         }
 
         // Remover a classe 'active' de todos os links do menu
@@ -162,34 +196,6 @@
         clickedLink.classList.add("active");
       }
 
-      async function downloadPlot(contentId) {
-        var url = `http://127.0.0.1:5000/${contentId}`;
-
-        try {
-          // Realiza uma requisição para baixar o gráfico
-          var response = await fetch(url);
-          var blob = await response.blob();
-
-          // Cria um link temporário para iniciar o download
-          var urlObject = window.URL || window.webkitURL || window;
-          var downloadUrl = urlObject.createObjectURL(blob);
-
-          // Cria um link de download e o aciona
-          var link = document.createElement("a");
-          link.href = downloadUrl;
-          link.download = "scatter_plot.png";
-          document.body.appendChild(link);
-          link.click();
-
-          // Libera recursos
-          setTimeout(() => {
-            urlObject.revokeObjectURL(downloadUrl);
-            document.body.removeChild(link);
-          }, 100);
-        } catch (error) {
-          console.error("Erro ao baixar o gráfico:", error);
-        }
-      }
       // Função para obter o contentId do URL
       function getContentIdFromUrl() {
         var url = window.location.href;
@@ -209,6 +215,64 @@
           contentId = "default_content";
         }
         showContent(contentId);
+      });
+
+      document.addEventListener("submit", function (event) {
+        if (event.target.id === "dataForm") {
+          event.preventDefault(); // previnir de dar f5 na tela
+
+          // Obter os valores de x e y
+          var xValues = document.getElementById("x").value.split(",");
+          var yValues = document.getElementById("y").value.split(",");
+
+          if (xValues.length !== yValues.length) {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: "As listas de valores X e Y devem ter o mesmo tamanho",
+            });
+            return; // Impedir o envio do formulário se as listas tiverem tamanhos diferentes
+          }
+
+          var form = document.getElementById("dataForm"); // Assuming your form has the ID "dataForm"
+          const formData = new FormData(form); // Create FormData object from the form
+          fetch("http://127.0.0.1:5000/download_plot", {
+            method: "POST",
+            body: formData,
+          })
+            .then(async (response) => {
+              if (!response.ok) {
+                throw new Error("Erro ao enviar os dados");
+              }
+              var blob = await response.blob();
+
+              // Cria um link temporário para iniciar o download
+              var urlObject = window.URL || window.webkitURL || window;
+              var downloadUrl = urlObject.createObjectURL(blob);
+
+              // Cria um link de download e o aciona
+              var name = document.getElementById("chart_type").value;
+
+              var link = document.createElement("a");
+              link.href = downloadUrl;
+              link.download = `${name}.png`;
+              document.body.appendChild(link);
+              link.click();
+
+              // Libera recursos
+              setTimeout(() => {
+                urlObject.revokeObjectURL(downloadUrl);
+                document.body.removeChild(link);
+              }, 100);
+            })
+            .then((data) => {
+              // Trate a resposta do servidor, se necessário
+              console.log("Dados enviados com sucesso:", data);
+            })
+            .catch((error) => {
+              console.error("Erro:", error);
+            });
+        }
       });
     </script>
   </body>

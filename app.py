@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, render_template, send_file
+from flask import Flask, jsonify, render_template, request, send_file
 import random
 import sqlite3
 import time
 import json
 import matplotlib.pyplot as plt
-from PIL import Image
-import io
+import numpy as np
+
 
 app = Flask(__name__)
 
@@ -34,18 +34,94 @@ def create_tables():
 create_tables()
 
 
-def generate_scatter_plot(x, y):
+def generate_scatter_plot(data):
+
+    np.random.seed(19680801)
+
+
+    # Convertendo os dados de string para listas de números
+    x_values = [float(x) for x in data["x"].split(",")]
+    y_values = [float(y) for y in data["y"].split(",")]
+
+    N = len(x_values)
+    colors = np.random.rand(N)
+    area = (30 * np.random.rand(N))**2  # 0 to 15 point radii
+
     plt.figure(figsize=(8, 6))
-    plt.scatter(x, y, color='blue', marker='o', label='Scatter Plot')
-    plt.xlabel('X-axis')
-    plt.ylabel('Y-axis')
+    plt.scatter(x_values, y_values, s=area, c=colors, marker='o', label='Scatter Plot')
+    plt.xlabel(data["label_x"])
+    plt.ylabel(data["label_y"])
     plt.title('Scatter Plot')
     plt.legend()
     
     # Salvar o gráfico em um arquivo
     plt.savefig('scatter_plot.png', format='png')
 
+def generate_bar_chart(data):
+    fig = plt.figure(figsize=(10, 5))
+
+    x_values = [float(x) for x in data["x"].split(",")]
+    y_values = [float(y) for y in data["y"].split(",")]
+
+    N = len(x_values)
+    colors = np.random.rand(N)
+
+    # Criando o gráfico de barras
+    plt.bar(x_values, y_values, color='blue', width=0.4)
+
+    plt.xlabel(data["label_x"])
+    plt.ylabel(data["label_y"])
+    plt.title("Bar Chart")
+
+    plt.savefig('bar_chart.png', format='png')
+
+def generate_line_chart(data):
+    fig = plt.figure(figsize=(10, 5))
+
+    x_values = [float(x) for x in data["x"].split(",")]
+    y_values = [float(y) for y in data["y"].split(",")]
+    # Criando o gráfico de linha
+    plt.plot(x_values, y_values, marker='o', color='blue', linestyle='-')
+
+    plt.xlabel(data["label_x"])
+    plt.ylabel(data["label_y"])
+    plt.title("Line Chart")
+
+    plt.savefig('line_chart.png', format='png')
+
+def generate_bubble_chart(data):
+    fig = plt.figure(figsize=(10, 5))
+
+    x_values = [float(x) for x in data["x"].split(",")]
+    y_values = [float(y) for y in data["y"].split(",")]
+    
+    # Criando o gráfico de dispersão com bolhas
+    plt.scatter(x_values, y_values, s=100, alpha=0.5)
+
+    plt.xlabel(data["label_x"])
+    plt.ylabel(data["label_y"])
+    plt.title("Bubble Chart")
+
+    plt.savefig('bubble_chart.png', format='png')
+
+
+def generate_dot_plot(data):
+    fig = plt.figure(figsize=(10, 5))
+
+    x_values = [float(x) for x in data["x"].split(",")]
+    y_values = [float(y) for y in data["y"].split(",")]
+
+    # Criando o gráfico de pontos
+    plt.plot(x_values, y_values, marker='o', color="blue", linestyle='')
+
+    plt.xlabel(data["label_x"])
+    plt.ylabel(data["label_y"])
+    plt.title("Dot Plot")
+
+    plt.savefig('dot_plot.png', format='png')
+
 # Função para gerar um vetor ordenado e embaralhá-lo
+
 def generate_shuffled_vector():
     shuffled_vector = random.sample(range(1, 1000000), 50000)  # Aqui usei um intervalo de 1 a 1.000.000, você pode ajustar conforme necessário
     return shuffled_vector
@@ -151,24 +227,44 @@ def sorted_vector():
         'execution_times': execution_times
     })
 
-@app.route('/scatter_plot')
-def scatter_plot():
-    # Suponha que você tenha seus próprios dados para o gráfico de dispersão
-    x = [1, 2, 3, 4, 5]  # Dados x
-    y = [10, 15, 20, 25, 30]  # Dados y
 
-    # Gerar o gráfico de dispersão
-    generate_scatter_plot(x, y)
+# @app.route('/scatter_plot')
+# def scatter_plot():
+#     x = [1, 2, 3, 4, 5]  # Dados x
+#     y = [10, 15, 20, 25, 30]  # Dados y
 
-    # Retorna os dados JSON
-    data = {'x': x, 'y': y}
-    return jsonify(data)
+#     # Gerar o gráfico de dispersão
+#     generate_scatter_plot(x,y)
 
-@app.route('/download_plot')
+#     image_path = 'bar_chart.png'
+#     return send_file(image_path, as_attachment=True)
+
+@app.route('/download_plot', methods=['POST'])
 def download_plot():
-    # Abre o gráfico gerado
-    image_path = 'scatter_plot.png'
-    return send_file(image_path, as_attachment=True, attachment_filename='scatter_plot.png')
+    if request.method == 'POST':
+        chart_type = request.form.get('chart_type')
+        data = request.form.to_dict()
 
+        # Mapeamento de tipos de gráfico para funções correspondentes
+        chart_functions = {
+            'scatter_plot': generate_scatter_plot,
+            'line_chart': generate_line_chart,
+            'bar_chart': generate_bar_chart,
+            'bubble_chart': generate_bubble_chart,
+            'dot_plot': generate_dot_plot,
+        }
+
+        # Verifica se o tipo de gráfico solicitado está no dicionário
+        if chart_type in chart_functions:
+            # Chama a função correspondente ao tipo de gráfico
+            chart_functions[chart_type](data)
+
+            image_path = f'{chart_type}.png'
+            return send_file(image_path, as_attachment=True)
+        else:
+            return "Tipo de gráfico inválido", 400
+    else:
+        return "Método não permitido", 405
+    
 if __name__ == "__main__":
     app.run(debug=True)
